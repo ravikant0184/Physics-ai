@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Physics Focus — HCV Solutions</title>
+<style>
+  :root{
+    /* Chalkboard theme (default) */
+    --bg:#182722;
+    --surface:#1f342c;
+    --surface-2:#243c33;
+    --line:#31504363;
+    --ink:#eef2ea;
+    --ink-dim:#a9bcb2;
+    --chalk-yellow:#e8c468;
+    --chalk-green:#7fd1ae;
+    --chalk-red:#e0836f;
+    --radius:3px;
+    --serif:'Iowan Old Style','Palatino Linotype',Georgia,serif;
+    --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+  }
+  [data-theme="paper"]{
+    --bg:#f4efe2;
+    --surface:#fffdf6;
+    --surface-2:#ece4d1;
+    --line:#d8cdb1;
+    --ink:#2a271f;
+    --ink-dim:#6d6653;
+    --chalk-yellow:#b8860b;
+    --chalk-green:#3f7a55;
+    --chalk-red:#b3402b;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);transition:background .25s,color .25s;}
+  body::before{
+    content:"";position:fixed;inset:0;pointer-events:none;opacity:.05;z-index:0;
+    background-image:linear-gradient(var(--ink) 1px,transparent 1px),linear-gradient(90deg,var(--ink) 1px,transparent 1px);
+    background-size:34px 34px;
+  }
+  button{font-family:inherit;cursor:pointer;}
+  ::-webkit-scrollbar{width:8px;}
+  ::-webkit-scrollbar-thumb{background:var(--line);border-radius:4px;}
+
+  /* Top bar */
+  header{
+    position:relative;z-index:2;display:flex;align-items:center;gap:14px;
+    padding:14px 18px;border-bottom:1px solid var(--line);background:var(--surface);
+  }
+  .brand{font-family:var(--serif);font-size:1.3rem;letter-spacing:.02em;white-space:nowrap;}
+  .brand em{font-style:normal;color:var(--chalk-green);}
+  .search-wrap{flex:1;max-width:420px;position:relative;}
+  #searchBox{
+    width:100%;padding:9px 12px 9px 32px;border-radius:var(--radius);border:1px solid var(--line);
+    background:var(--surface-2);color:var(--ink);font-size:.92rem;
+  }
+  #searchBox:focus{outline:2px solid var(--chalk-green);outline-offset:1px;}
+  .search-wrap svg{position:absolute;left:9px;top:50%;transform:translateY(-50%);opacity:.6;}
+  .top-actions{display:flex;gap:8px;align-items:center;margin-left:auto;}
+  .icon-btn{
+    background:none;border:1px solid var(--line);color:var(--ink);border-radius:var(--radius);
+    padding:7px 10px;font-size:.85rem;display:flex;align-items:center;gap:6px;
+  }
+  .icon-btn:hover{border-color:var(--chalk-green);}
+  .icon-btn.active{border-color:var(--chalk-green);color:var(--chalk-green);}
+
+  /* Layout */
+  .app{position:relative;z-index:1;display:grid;grid-template-columns:260px 1fr;min-height:calc(100vh - 57px);}
+  @media (max-width:860px){
+    .app{grid-template-columns:1fr;}
+    .sidebar{position:fixed;inset:57px 0 0 0;z-index:5;transform:translateX(0);transition:transform .25s;}
+    .sidebar.hidden-mobile{transform:translateX(-100%);}
+    .main{padding-top:0;}
+  }
+
+  .sidebar{background:var(--surface);border-right:1px solid var(--line);overflow-y:auto;padding:14px 10px 30px;}
+  .tabbar{display:flex;gap:4px;margin-bottom:12px;background:var(--surface-2);border-radius:var(--radius);padding:3px;}
+  .tabbar button{flex:1;background:none;border:none;color:var(--ink-dim);padding:7px 4px;font-size:.72rem;border-radius:2px;}
+  .tabbar button.active{background:var(--bg);color:var(--chalk-green);font-weight:600;}
+
+  .overall-progress{padding:10px 8px;margin-bottom:12px;border:1px solid var(--line);border-radius:var(--radius);}
+  .overall-progress .label{font-size:.72rem;color:var(--ink-dim);display:flex;justify-content:space-between;margin-bottom:6px;}
+  .bar{height:6px;background:var(--surface-2);border-radius:3px;overflow:hidden;}
+  .bar > div{height:100%;background:var(--chalk-green);}
+
+  .chapter{margin-bottom:6px;border:1px solid transparent;border-radius:var(--radius);}
+  .chapter-head{
+    display:flex;align-items:center;gap:8px;padding:9px 8px;cursor:pointer;border-radius:var(--radius);
+  }
+  .chapter-head:hover{background:var(--surface-2);}
+  .chapter-head .num{font-family:var(--serif);color:var(--chalk-yellow);font-size:.95rem;min-width:20px;}
+  .chapter-head .name{flex:1;font-size:.87rem;}
+  .chapter-head .pct{font-size:.7rem;color:var(--ink-dim);}
+  .chapter-head .chev{transition:transform .2s;opacity:.6;font-size:.7rem;}
+  .chapter.open .chev{transform:rotate(90deg);}
+  .video-list{display:none;padding-left:26px;margin:2px 0 8px;}
+  .chapter.open .video-list{display:block;}
+  .video-item{
+    display:flex;align-items:center;gap:7px;padding:7px 6px;border-radius:var(--radius);cursor:pointer;
+    font-size:.82rem;color:var(--ink-dim);
+  }
+  .video-item:hover{background:var(--surface-2);color:var(--ink);}
+  .video-item.playing{color:var(--chalk-green);background:var(--surface-2);}
+  .video-item .status{width:14px;text-align:center;flex-shrink:0;}
+  .video-item .status.done{color:var(--chalk-green);}
+  .video-item .status.progress{color:var(--chalk-yellow);}
+  .video-item .bm{margin-left:auto;opacity:.4;flex-shrink:0;}
+  .video-item .bm.on{opacity:1;color:var(--chalk-red);}
+
+  .flat-list .video-item{padding-left:6px;}
+  .empty-note{font-size:.8rem;color:var(--ink-dim);padding:10px 8px;line-height:1.5;}
+
+  /* Main */
+  .main{padding:22px;}
+  .mobile-back{display:none;}
+  @media (max-width:860px){
+    .mobile-back{
+      display:flex;align-items:center;gap:6px;background:var(--surface);border:1px solid var(--line);
+      color:var(--ink);padding:8px 12px;border-radius:var(--radius);font-size:.85rem;margin-bottom:14px;
+    }
+  }
+
+  .player-shell{max-width:980px;margin:0 auto;}
+  .player-frame-wrap{
+    position:relative;width:100%;aspect-ratio:16/9;background:#000;border-radius:var(--radius);
+    overflow:hidden;border:1px solid var(--line);
+  }
+  #ytFrame{width:100%;height:100%;border:0;}
+  .placeholder{
+    display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;
+    color:var(--ink-dim);gap:10px;text-align:center;padding:20px;
+  }
+  .placeholder svg{opacity:.5;}
+
+  .video-meta{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-top:16px;}
+  .video-meta h1{font-family:var(--serif);font-size:1.25rem;font-weight:600;margin:0 0 6px;}
+  .video-meta .chap-tag{font-size:.78rem;color:var(--ink-dim);}
+  .status-pill{
+    display:inline-flex;align-items:center;gap:6px;font-size:.78rem;padding:5px 10px;border-radius:20px;
+    border:1px solid var(--line);white-space:nowrap;
+  }
+
+  .controls-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;}
+  .ai-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:10px;}
+  .ai-badge{font-size:.74rem;padding:4px 10px;border-radius:20px;border:1px solid var(--line);color:var(--ink-dim);}
+  .ai-badge.manual{color:var(--chalk-yellow);border-color:var(--chalk-yellow);}
+  #chapterSelect{
+    background:var(--surface);border:1px solid var(--line);color:var(--ink);border-radius:var(--radius);
+    padding:6px 8px;font-size:.78rem;max-width:220px;
+  }
+  .ctl{
+    background:var(--surface);border:1px solid var(--line);color:var(--ink);padding:8px 13px;
+    border-radius:var(--radius);font-size:.8rem;display:flex;align-items:center;gap:6px;
+  }
+  .ctl:hover{border-color:var(--chalk-green);}
+  .ctl.on{border-color:var(--chalk-green);color:var(--chalk-green);}
+  .speed-group{display:flex;border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;}
+  .speed-group button{background:var(--surface);border:none;color:var(--ink-dim);padding:8px 10px;font-size:.78rem;border-right:1px solid var(--line);}
+  .speed-group button:last-child{border-right:none;}
+  .speed-group button.on{background:var(--chalk-green);color:#0c1a15;font-weight:600;}
+
+  .home-hero{max-width:640px;margin:6vh auto 0;text-align:center;padding:0 12px;}
+  .home-hero h1{font-family:var(--serif);font-size:1.9rem;line-height:1.3;margin-bottom:10px;}
+  .home-hero p{color:var(--ink-dim);font-size:.95rem;line-height:1.6;}
+  .home-stats{display:flex;justify-content:center;gap:26px;margin-top:26px;flex-wrap:wrap;}
+  .home-stat{text-align:center;}
+  .home-stat .n{font-family:var(--serif);font-size:1.7rem;color:var(--chalk-green);}
+  .home-stat .l{font-size:.72rem;color:var(--ink-dim);text-transform:uppercase;letter-spacing:.06em;}
+
+  kbd{background:var(--surface-2);border:1px solid var(--line);border-radius:3px;padding:1px 6px;font-size:.75rem;font-family:var(--sans);}
+  .kb-hint{margin-top:34px;font-size:.75rem;color:var(--ink-dim);display:flex;gap:16px;flex-wrap:wrap;justify-content:center;}
+
+  a{color:var(--chalk-green);}
+</style>
+</head>
+<body data-theme="chalk">
+
+<header>
+  <div class="brand">PHYSICS <em>FOCUS</em></div>
+  <div class="search-wrap">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.35-4.35"/></svg>
+    <input id="searchBox" placeholder="Search Abhay Agrawal Physics videos…" autocomplete="off">
+  </div>
+  <div class="top-actions">
+    <button class="icon-btn" id="reclassifyAllBtn" title="Re-run AI on uncertain videos">🤖 Re-classify uncertain</button>
+    <button class="icon-btn" id="refreshBtn" title="Fetch newest videos">⟳ Refresh</button>
+    <button class="icon-btn" id="themeToggle" title="Toggle theme">🌓 Theme</button>
+    <button class="icon-btn" id="sidebarToggle" title="Chapters" style="display:none">☰ Chapters</button>
+  </div>
+</header>
+
+<div class="app">
+  <aside class="sidebar" id="sidebar">
+    <div class="tabbar">
+      <button class="tab-btn active" data-tab="chapters">Chapters</button>
+      <button class="tab-btn" data-tab="continue">Continue</button>
+      <button class="tab-btn" data-tab="bookmarks">Marked</button>
+    </div>
+
+    <div class="overall-progress">
+      <div class="label"><span>Overall progress</span><span id="overallPct">0%</span></div>
+      <div class="bar"><div id="overallBar" style="width:0%"></div></div>
+    </div>
+
+    <div id="tab-chapters"></div>
+    <div id="tab-continue" style="display:none" class="flat-list"></div>
+    <div id="tab-bookmarks" style="display:none" class="flat-list"></div>
+  </aside>
+
+  <main class="main">
+    <button class="mobile-back" id="mobileBack">← Back to Chapters</button>
+    <div id="mainContent"></div>
+  </main>
+</div>
+
+<script>
+/* ============================================================
+   Videos come from /api/videos (a serverless function) which
+   fetches them live from @abhayagrawalphysics and validates every
+   single one server-side before it ever reaches this page. The
+   frontend never holds an API key and never talks to YouTube's
+   Data API directly.
+   ============================================================ */
+const CHANNEL_HANDLE = "@abhayagrawalphysics";
+
+// Mirrors lib/hcv-chapters.js on the server — only used to populate the
+// "Change Chapter" dropdown, not for any actual classification logic.
+const HCV_CHAPTERS_CLIENT = [
+  {id:1,name:"Introduction to Physics"},{id:2,name:"Physics and Mathematics"},
+  {id:3,name:"Rest and Motion: Kinematics"},{id:4,name:"The Forces"},
+  {id:5,name:"Newton's Laws of Motion"},{id:6,name:"Friction"},
+  {id:7,name:"Circular Motion"},{id:8,name:"Work and Energy"},
+  {id:9,name:"Centre of Mass, Linear Momentum, Collision"},{id:10,name:"Rotational Mechanics"},
+  {id:11,name:"Gravitation"},{id:12,name:"Simple Harmonic Motion"},
+  {id:13,name:"Fluid Mechanics"},{id:14,name:"Some Mechanical Properties of Matter"},
+  {id:15,name:"Wave Motion and Waves on a String"},{id:16,name:"Sound Waves"},
+  {id:17,name:"Light Waves"},{id:18,name:"Geometrical Optics"},
+  {id:19,name:"Optical Instruments"},{id:20,name:"Dispersion and Spectra"},
+  {id:21,name:"Speed of Light"},{id:22,name:"Photometry"},
+  {id:23,name:"Heat and Temperature"},{id:24,name:"Kinetic Theory of Gases"},
+  {id:25,name:"Calorimetry"},{id:26,name:"Laws of Thermodynamics"},
+  {id:27,name:"Specific Heat Capacities of Gases"},{id:28,name:"Heat Transfer"},
+  {id:29,name:"Electric Field and Potential"},{id:30,name:"Gauss's Law"},
+  {id:31,name:"Capacitors"},{id:32,name:"Electric Current in Conductors"},
+  {id:33,name:"Thermal and Chemical Effects of Current"},{id:34,name:"Magnetic Field"},
+  {id:35,name:"Magnetic Field due to Current"},{id:36,name:"Permanent Magnets"},
+  {id:37,name:"Magnetic Properties of Matter"},{id:38,name:"Electromagnetic Induction"},
+  {id:39,name:"Alternating Current"},{id:40,name:"Electromagnetic Waves"},
+  {id:41,name:"Electric Current through Gases"},{id:42,name:"Photoelectric Effect and Wave-Particle Duality"},
+  {id:43,name:"Bohr's Model and Physics of Atom"},{id:44,name:"X-rays"},
+  {id:45,name:"Semiconductors and Semiconductor Devices"},{id:46,name:"The Nucleus"},
+];
+const VIDEOS_CACHE_KEY = "physicsFocus_videoCache_v1";
+const VIDEOS_CACHE_TTL_MS = 6 * 60 * 60 * 1000; // 6 hours
+
+let CHAPTERS = [];
+let loadError = null;
+
+async function loadChapters() {
+  // Serve from local cache first if fresh, so reopening the app is instant.
+  try {
+    const cached = JSON.parse(localStorage.getItem(VIDEOS_CACHE_KEY) || "null");
+    if (cached && Date.now() - cached.at < VIDEOS_CACHE_TTL_MS) {
+      CHAPTERS = cached.chapters;
+      return;
+    }
+  } catch (e) {}
+
+  try {
+    const res = await fetch("/api/videos");
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    CHAPTERS = data.chapters;
+    localStorage.setItem(VIDEOS_CACHE_KEY, JSON.stringify({ chapters: CHAPTERS, at: Date.now() }));
+  } catch (e) {
+    loadError = e.message;
+    // Fall back to whatever was last cached, even if stale, rather than showing nothing.
+    try {
+      const cached = JSON.parse(localStorage.getItem(VIDEOS_CACHE_KEY) || "null");
+      if (cached) CHAPTERS = cached.chapters;
+    } catch (e2) {}
+  }
+}
+
+const LS_KEY = "physicsFocus_v1";
+function loadState(){
+  try{ return JSON.parse(localStorage.getItem(LS_KEY)) || {}; }catch(e){ return {}; }
+}
+function saveState(s){ localStorage.setItem(LS_KEY, JSON.stringify(s)); }
+let state = Object.assign({ progress:{}, bookmarks:[], recent:[], theme:"chalk" }, loadState());
+
+function allVideos(){
+  return CHAPTERS.flatMap(c => c.videos.map(v => ({...v, chapterId:c.id, chapterTitle:c.title})));
+}
+function findVideo(id){ return allVideos().find(v => v.id === id); }
+function chapterProgress(ch){
+  const total = ch.videos.length;
+  if(!total) return 0;
+  const done = ch.videos.filter(v => state.progress[v.id] === "completed").length;
+  return Math.round((done/total)*100);
+}
+function overallProgress(){
+  const vids = allVideos();
+  if(!vids.length) return 0;
+  const done = vids.filter(v => state.progress[v.id] === "completed").length;
+  return Math.round((done/vids.length)*100);
+}
+
+let currentVideoId = null;
+let player = null;
+let ytReady = false;
+
+/* ---------- Rendering ---------- */
+function statusIcon(vid){
+  const st = state.progress[vid];
+  if(st === "completed") return '<span class="status done">✓</span>';
+  if(st === "in-progress") return '<span class="status progress">◐</span>';
+  return '<span class="status">○</span>';
+}
+function bmIcon(vid){
+  const on = state.bookmarks.includes(vid);
+  return `<span class="bm ${on?'on':''}" data-bm="${vid}">${on?'★':'☆'}</span>`;
+}
+
+function renderChapters(filter=""){
+  const q = filter.trim().toLowerCase();
+  const box = document.getElementById("tab-chapters");
+  box.innerHTML = "";
+  CHAPTERS.forEach((ch, idx) => {
+    const matchVids = ch.videos.filter(v => !q || v.title.toLowerCase().includes(q));
+    if(q && matchVids.length === 0) return;
+    const div = document.createElement("div");
+    div.className = "chapter" + (q || ch.id === openChapterId ? " open" : "");
+    const pct = chapterProgress(ch);
+    div.innerHTML = `
+      <div class="chapter-head" data-ch="${ch.id}">
+        <span class="num">${String(idx+1).padStart(2,'0')}</span>
+        <span class="name">${ch.title}</span>
+        <span class="pct">${ch.videos.length ? pct+'%' : ''}</span>
+        <span class="chev">▸</span>
+      </div>
+      <div class="video-list">
+        ${matchVids.length ? matchVids.map(v => `
+          <div class="video-item ${v.id===currentVideoId?'playing':''}" data-play="${v.id}">
+            ${statusIcon(v.id)}<span>${v.title}</span>${bmIcon(v.id)}
+          </div>`).join("") : `<div class="empty-note">No videos added yet for this chapter.</div>`}
+      </div>`;
+    box.appendChild(div);
+  });
+  if(!CHAPTERS.some(c=>c.videos.length)){
+    box.insertAdjacentHTML("beforeend", loadError
+      ? `<div class="empty-note">Couldn't load videos (${loadError}). Check the API key setup, then hit Refresh above.</div>`
+      : `<div class="empty-note">Loading videos from ${CHANNEL_HANDLE}…</div>`);
+  }
+  document.getElementById("overallPct").textContent = overallProgress()+"%";
+  document.getElementById("overallBar").style.width = overallProgress()+"%";
+}
+
+let openChapterId = null;
+function renderFlatList(targetId, ids){
+  const box = document.getElementById(targetId);
+  if(!ids.length){ box.innerHTML = `<div class="empty-note">Nothing here yet.</div>`; return; }
+  box.innerHTML = ids.map(id => {
+    const v = findVideo(id);
+    if(!v) return "";
+    return `<div class="video-item ${id===currentVideoId?'playing':''}" data-play="${id}">
+      ${statusIcon(id)}<span>${v.title}</span>${bmIcon(id)}
+    </div>`;
+  }).join("");
+}
+function renderContinue(){
+  renderFlatList("tab-continue", state.recent.slice(0,15));
+}
+function renderBookmarks(){
+  renderFlatList("tab-bookmarks", state.bookmarks);
+}
+
+function renderMain(){
+  const box = document.getElementById("mainContent");
+  if(!currentVideoId){
+    box.innerHTML = `
+      <div class="home-hero">
+        <h1>Your digital HCV solution book.</h1>
+        <p>Pick a chapter on the left, choose a question video, and watch — nothing else.
+        No home feed, no Shorts, no recommendations. Only ${CHANNEL_HANDLE}.</p>
+        <div class="home-stats">
+          <div class="home-stat"><div class="n">${allVideos().filter(v=>state.progress[v.id]==='completed').length}</div><div class="l">Completed</div></div>
+          <div class="home-stat"><div class="n">${allVideos().filter(v=>state.progress[v.id]==='in-progress').length}</div><div class="l">In progress</div></div>
+          <div class="home-stat"><div class="n">${state.bookmarks.length}</div><div class="l">Bookmarked</div></div>
+        </div>
+        <div class="kb-hint">
+          <span><kbd>/</kbd> search</span>
+          <span><kbd>space</kbd> play/pause</span>
+          <span><kbd>f</kbd> fullscreen</span>
+          <span><kbd>↑</kbd>/<kbd>↓</kbd> next/prev video</span>
+        </div>
+      </div>`;
+    return;
+  }
+  const v = findVideo(currentVideoId);
+  const st = state.progress[currentVideoId] || "not-started";
+  const cls = v.classification || {};
+  box.innerHTML = `
+    <div class="player-shell">
+      <div class="player-frame-wrap" id="playerWrap">
+        <div id="ytFrame"></div>
+      </div>
+      <div class="video-meta">
+        <div>
+          <h1>${v.title}</h1>
+          <div class="chap-tag">${v.chapterTitle}</div>
+        </div>
+        <span class="status-pill">${st==='completed'?'✓ Completed':st==='in-progress'?'◐ In progress':'○ Not started'}</span>
+      </div>
+      <div class="ai-row">
+        <span class="ai-badge ${cls.source||''}">${classificationBadgeText(cls)}</span>
+        <select id="chapterSelect" title="Change chapter">
+          <option value="">Other / Uncategorized</option>
+          ${HCV_CHAPTERS_CLIENT.map(c=>`<option value="${c.id}" ${cls.chapterId===c.id?'selected':''}>${c.id}. ${c.name}</option>`).join("")}
+        </select>
+        <button class="ctl" id="btnReclassify">↻ Re-classify with AI</button>
+      </div>
+      <div class="controls-row">
+        <button class="ctl ${st==='in-progress'?'on':''}" id="btnProgress">◐ Mark in progress</button>
+        <button class="ctl ${st==='completed'?'on':''}" id="btnComplete">✓ Mark completed</button>
+        <button class="ctl ${state.bookmarks.includes(currentVideoId)?'on':''}" id="btnBookmark">${state.bookmarks.includes(currentVideoId)?'★ Bookmarked':'☆ Bookmark'}</button>
+        <button class="ctl" id="btnFullscreen">⛶ Fullscreen</button>
+        <div class="speed-group" id="speedGroup">
+          ${[0.75,1,1.25,1.5,2].map(s=>`<button data-speed="${s}" class="${s===1?'on':''}">${s}×</button>`).join("")}
+        </div>
+      </div>
+    </div>`;
+  initPlayer(currentVideoId);
+  attachPlayerControls();
+}
+
+function classificationBadgeText(cls){
+  if(!cls || cls.confidence == null) return "Not classified yet";
+  if(cls.source === "manual") return "✎ Manually set";
+  const pct = Math.round(cls.confidence*100);
+  if(cls.bucket === "assigned") return `🤖 AI: ${pct}% confident`;
+  if(cls.bucket === "review") return `⚠ Needs review — ${pct}%`;
+  return `? Uncategorized — ${pct}%`;
+}
+
+/* ---------- YouTube IFrame API ---------- */
+function loadYTApi(){
+  if(window.YT && window.YT.Player){ ytReady = true; return; }
+  const tag = document.createElement('script');
+  tag.src = "https://www.youtube.com/iframe_api";
+  document.head.appendChild(tag);
+}
+window.onYouTubeIframeAPIReady = function(){ ytReady = true; if(currentVideoId) initPlayer(currentVideoId); };
+
+function initPlayer(videoId){
+  if(!window.YT || !window.YT.Player){ loadYTApi(); return; }
+  if(player){ player.destroy(); }
+  player = new YT.Player('ytFrame', {
+    videoId,
+    playerVars:{
+      rel: 0,               // restricts related videos to same channel where YouTube allows
+      modestbranding: 1,
+      playsinline: 1,
+      fs: 1,
+      controls: 1,
+      autoplay: 0,
+      iv_load_policy: 3,    // no video annotations
+      cc_load_policy: 0
+    },
+    events:{
+      onReady: () => {},
+      onStateChange: (e) => {
+        if(e.data === YT.PlayerState.PLAYING){
+          if(state.progress[videoId] !== "completed") setProgress(videoId, "in-progress", false);
+          pushRecent(videoId);
+        }
+        if(e.data === YT.PlayerState.ENDED){
+          setProgress(videoId, "completed", true);
+        }
+      }
+    }
+  });
+}
+
+function attachPlayerControls(){
+  document.getElementById("btnProgress").onclick = () => setProgress(currentVideoId, "in-progress", true);
+  document.getElementById("btnComplete").onclick = () => setProgress(currentVideoId, "completed", true);
+  document.getElementById("btnBookmark").onclick = () => toggleBookmark(currentVideoId);
+  document.getElementById("btnFullscreen").onclick = () => {
+    const el = document.getElementById("playerWrap");
+    if(el.requestFullscreen) el.requestFullscreen();
+  };
+  document.getElementById("chapterSelect").onchange = async (e) => {
+    const chapterId = e.target.value;
+    e.target.disabled = true;
+    try{
+      const r = await fetch("/api/classify", { method:"POST", headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({ action:"override", videoId: currentVideoId, chapterId }) });
+      const data = await r.json();
+      applyClassificationLocally(currentVideoId, data.classification);
+    } finally { e.target.disabled = false; }
+  };
+  document.getElementById("btnReclassify").onclick = async (e) => {
+    const btn = e.target; const orig = btn.textContent; btn.textContent = "↻ Re-classifying…"; btn.disabled = true;
+    try{
+      const v = findVideo(currentVideoId);
+      const r = await fetch("/api/classify", { method:"POST", headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({ action:"reclassify", videoId: v.id, title: v.title, description: v.description || "" }) });
+      const data = await r.json();
+      applyClassificationLocally(currentVideoId, data.classification);
+    } finally { btn.textContent = orig; btn.disabled = false; }
+  };
+  document.getElementById("speedGroup").onclick = (e) => {
+    const btn = e.target.closest("button[data-speed]");
+    if(!btn) return;
+    const rate = parseFloat(btn.dataset.speed);
+    if(player && player.setPlaybackRate) player.setPlaybackRate(rate);
+    document.querySelectorAll("#speedGroup button").forEach(b=>b.classList.toggle("on", b===btn));
+  };
+}
+
+// Updates the in-memory CHAPTERS/cache so the UI reflects a classification
+// change immediately, without waiting for the next 6-hour refresh.
+function applyClassificationLocally(videoId, classification){
+  if(!classification) return;
+  for(const ch of CHAPTERS){
+    const idx = ch.videos.findIndex(v => v.id === videoId);
+    if(idx > -1) ch.videos[idx].classification = classification;
+  }
+  try{
+    const cached = JSON.parse(localStorage.getItem(VIDEOS_CACHE_KEY) || "null");
+    if(cached){ cached.chapters = CHAPTERS; localStorage.setItem(VIDEOS_CACHE_KEY, JSON.stringify(cached)); }
+  }catch(e){}
+  renderMain();
+  renderChapters(document.getElementById("searchBox").value);
+}
+
+/* ---------- State mutations ---------- */
+function setProgress(videoId, status, rerender){
+  if(state.progress[videoId] === status){ delete state.progress[videoId]; } // click again to clear
+  else state.progress[videoId] = status;
+  saveState(state);
+  if(rerender){ renderMain(); }
+  renderChapters(document.getElementById("searchBox").value);
+  renderContinue(); renderBookmarks();
+}
+function toggleBookmark(videoId){
+  const i = state.bookmarks.indexOf(videoId);
+  if(i>-1) state.bookmarks.splice(i,1); else state.bookmarks.unshift(videoId);
+  saveState(state);
+  renderMain(); renderChapters(document.getElementById("searchBox").value); renderBookmarks();
+}
+function pushRecent(videoId){
+  state.recent = [videoId, ...state.recent.filter(id=>id!==videoId)].slice(0,20);
+  saveState(state);
+  renderContinue();
+}
+
+/* ---------- Navigation ---------- */
+function playVideo(videoId){
+  const v = findVideo(videoId);
+  if(!v) return; // guard: refuse anything not in CHAPTERS
+  currentVideoId = videoId;
+  openChapterId = v.chapterId;
+  renderMain();
+  renderChapters(document.getElementById("searchBox").value);
+  renderContinue(); renderBookmarks();
+  if(window.innerWidth <= 860) document.getElementById("sidebar").classList.add("hidden-mobile");
+}
+function goHome(){
+  currentVideoId = null;
+  if(player){ player.stopVideo && player.stopVideo(); }
+  renderMain();
+  renderChapters(document.getElementById("searchBox").value);
+}
+
+/* ---------- Events ---------- */
+document.addEventListener("click", (e) => {
+  const chHead = e.target.closest(".chapter-head");
+  if(chHead){
+    const id = chHead.dataset.ch;
+    openChapterId = (openChapterId === id) ? null : id;
+    renderChapters(document.getElementById("searchBox").value);
+    return;
+  }
+  const bm = e.target.closest("[data-bm]");
+  if(bm){ e.stopPropagation(); toggleBookmark(bm.dataset.bm); return; }
+  const playEl = e.target.closest("[data-play]");
+  if(playEl){ playVideo(playEl.dataset.play); return; }
+});
+
+document.getElementById("searchBox").addEventListener("input", (e) => {
+  renderChapters(e.target.value);
+});
+
+document.getElementById("themeToggle").addEventListener("click", () => {
+  const isPaper = document.body.dataset.theme === "paper";
+  document.body.dataset.theme = isPaper ? "chalk" : "paper";
+  state.theme = document.body.dataset.theme;
+  saveState(state);
+});
+
+document.getElementById("reclassifyAllBtn").addEventListener("click", async () => {
+  const btn = document.getElementById("reclassifyAllBtn");
+  const uncertain = allVideos().filter(v => {
+    const c = v.classification;
+    return c && c.source !== "manual" && c.bucket !== "assigned";
+  });
+  if(!uncertain.length){ btn.textContent = "🤖 Nothing to re-classify"; setTimeout(()=>btn.textContent="🤖 Re-classify uncertain", 1800); return; }
+  const orig = btn.textContent;
+  btn.textContent = `🤖 Re-classifying ${uncertain.length}…`;
+  btn.disabled = true;
+  try{
+    const r = await fetch("/api/classify", { method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({ action:"reclassify-uncertain", videos: uncertain.map(v=>({id:v.id,title:v.title,description:v.description||"",classification:v.classification})) }) });
+    const data = await r.json();
+    localStorage.removeItem(VIDEOS_CACHE_KEY);
+    await loadChapters();
+    renderChapters(document.getElementById("searchBox").value);
+    renderContinue(); renderBookmarks(); renderMain();
+  } finally { btn.textContent = orig; btn.disabled = false; }
+});
+
+document.getElementById("refreshBtn").addEventListener("click", async () => {
+  localStorage.removeItem(VIDEOS_CACHE_KEY);
+  document.getElementById("refreshBtn").textContent = "⟳ Refreshing…";
+  await loadChapters();
+  document.getElementById("refreshBtn").textContent = "⟳ Refresh";
+  renderChapters(document.getElementById("searchBox").value);
+  renderContinue(); renderBookmarks(); renderMain();
+});
+
+document.getElementById("mobileBack").addEventListener("click", () => {
+  document.getElementById("sidebar").classList.remove("hidden-mobile");
+});
+document.getElementById("sidebarToggle").addEventListener("click", () => {
+  document.getElementById("sidebar").classList.toggle("hidden-mobile");
+});
+
+document.querySelectorAll(".tab-btn").forEach(btn=>{
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));
+    btn.classList.add("active");
+    ["chapters","continue","bookmarks"].forEach(t=>{
+      document.getElementById("tab-"+t).style.display = (t===btn.dataset.tab) ? "block":"none";
+    });
+  });
+});
+
+document.addEventListener("keydown", (e) => {
+  if(e.target.tagName === "INPUT") {
+    if(e.key === "Escape") e.target.blur();
+    return;
+  }
+  if(e.key === "/"){ e.preventDefault(); document.getElementById("searchBox").focus(); }
+  if(e.key === "f"){ document.getElementById("btnFullscreen")?.click(); }
+  if(e.key === " " && player){ e.preventDefault();
+    const s = player.getPlayerState();
+    (s === 1) ? player.pauseVideo() : player.playVideo();
+  }
+  if(e.key === "ArrowDown" || e.key === "ArrowUp"){
+    const vids = allVideos();
+    const i = vids.findIndex(v=>v.id===currentVideoId);
+    if(i===-1) return;
+    const next = e.key==="ArrowDown" ? vids[i+1] : vids[i-1];
+    if(next) playVideo(next.id);
+  }
+});
+
+/* ---------- Init ---------- */
+async function init(){
+  document.body.dataset.theme = state.theme || "chalk";
+  loadYTApi();
+  renderChapters(); // shows "Loading videos…" immediately
+  renderContinue();
+  renderBookmarks();
+  renderMain();
+  if(window.innerWidth <= 860){
+    document.getElementById("sidebarToggle").style.display = "flex";
+    document.getElementById("sidebar").classList.add("hidden-mobile");
+  }
+  await loadChapters();
+  renderChapters(document.getElementById("searchBox").value);
+  renderContinue();
+  renderBookmarks();
+  renderMain();
+}
+init();
+</script>
+</body>
+</html>
